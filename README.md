@@ -1,11 +1,12 @@
 # SMTP2WR - An smtp to http (or another smtp) relay written in Go
 
 SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
-See rtmail.conf and routes.conf on how to configure RTMAIL.
+See smtp2wr.conf and routes.conf on how to configure RTMAIL.
 
 SMTP2WR is inspired and forked from RTMAIL (https://github.com/themecloud/rtmail) which was written over 5 years ago, looks unsupported now and doesn't compile due to missing and moving some libraries.
 
 Some new features have been added, such as:
+ - go modules
  - logging
  - docker image
 
