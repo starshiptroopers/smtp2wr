@@ -1,11 +1,17 @@
-# RTMAIL - An email proxy written in Go
+# SMTP2WR - An smtp to http (or another smtp) relay written in Go
 
-RTMAIL enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
+SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
 See rtmail.conf and routes.conf on how to configure RTMAIL.
+
+SMTP2WR is inspired and forked from RTMAIL (https://github.com/themecloud/rtmail) which was written over 5 years ago, looks unsupported now and doesn't compile due to missing and moving some libraries.
+
+Some new features have been added, such as:
+ - logging
+ - docker image
 
 ## Usage
 
-Set your email routes in a separate file (see example) and add the path to your routes file in the main config file.
+Set your email routes in a routes.conf file (see example) and add the path to your routes file in the main config file (smtp2wr.conf).
 You can set the TLS certificate and key aswell as what SMTP relay to use in the main config file. 
 
 ## Installation
