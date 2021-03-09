@@ -12,17 +12,22 @@ You can set the TLS certificate and key as well as what SMTP relay to use in the
 
 ## Installation
 
-Simply run the following to install a basic setup of RTMAIL.
-
-`curl -s https://raw.githubusercontent.com/rasmusj-se/rtmail/master/install.sh | sudo bash`
-
-Change your configs and start SMTP2WR with `smtp2wr` or use the docker image
-
 ## From source
 
+`git clone https://github.com/starshiptroopers/smtp2wr.git`
+`cd smtp2wr`
 `make build`
+`./bin/smtp2wr`
 
-`./smtp2wr -config ./smtp2wr.conf`
+## From Docker image
+
+Docker image isn't published yet. But you can build your own image from sources with command:
+
+`make docker-build`
+
+Then start the service with:
+
+`docker-compose up`
 
 ## Routes
 
