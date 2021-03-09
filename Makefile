@@ -34,5 +34,9 @@ lint: dep ## Lint the source files
 
 test: dep ## Run tests
 	go test -race -p 1 -timeout 300s -coverprofile=.test_coverage.txt ./... && \
-    	go tool cover -func=.test_coverage.txt | tail -n1 | awk '{print "Total test coverage: " $$3}'
+	go tool cover -func=.test_coverage.txt | tail -n1 | awk '{print "Total test coverage: " $$3}'
 	@rm .test_coverage.txt
+
+docker-build: build ## Build docker image
+	docker build -t starshiptroopers/smtp2wr:${TAG} .
+	docker image prune --force --filter label=stage=intermediate

@@ -1,0 +1,11 @@
+smtp2wr:
+  ports:
+    - "25:10025"
+
+  image: starshiptroopers/smtp2wr
+
+  container_name: smtp2wr
+
+  tty: true
+  stdin_open: true
+  restart: always
