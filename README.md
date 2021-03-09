@@ -24,7 +24,7 @@ You can set the TLS certificate and key as well as what SMTP relay to use in the
 
 ## From Docker image
 
-Docker image isn't published yet. But you can build your own image from sources with command:
+Docker image isn't published yet (working on it). But you can build your own image from sources with command:
 
 `make docker-build`
 
