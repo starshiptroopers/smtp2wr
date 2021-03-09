@@ -40,3 +40,6 @@ test: dep ## Run tests
 docker-build: build ## Build docker image
 	docker build -t starshiptroopers/smtp2wr:${TAG} .
 	docker image prune --force --filter label=stage=intermediate
+
+docker-image: docker-build ## Save docker image to file
+	docker save -o bin/smtp2wr.docker.tar starshiptroopers/smtp2wr
