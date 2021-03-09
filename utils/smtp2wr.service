@@ -1,0 +1,20 @@
+[Unit]
+Description=SMTP relay service (smtp2wr)
+After=network.target
+
+[Service]
+Type=simple
+User=nobody
+Group=nobody
+PIDFile=/run/smtp2wr.pid
+ExecStart=/opt/smtp2wr/smtp2wr
+WorkingDirectory=/opt/smtp2wr
+Restart=on-failure
+KillMode=process
+
+# Output needs to appear in instance console output
+StandardOutput=file:/opt/smtp2wr/logs/console.log
+StandardError=file:/opt/smtp2wr/logs/console.log
+
+[Install]
+WantedBy=multi-user.target

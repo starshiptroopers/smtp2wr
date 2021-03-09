@@ -1,19 +1,14 @@
 # SMTP2WR - An smtp to http (or another smtp) relay written in Go
 
 SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
-See smtp2wr.conf and routes.conf on how to configure RTMAIL.
+See smtp2wr.conf and routes.conf on how to configure SMTP2WR.
 
-SMTP2WR is inspired and forked from RTMAIL (https://github.com/themecloud/rtmail) which was written over 5 years ago, looks unsupported now and doesn't compile due to missing and moving some libraries.
-
-Some new features have been added, such as:
- - go modules
- - logging
- - docker image
+SMTP2WR is forked from RTMAIL (https://github.com/themecloud/rtmail) and completely rewritten.
 
 ## Usage
 
 Set your email routes in a routes.conf file (see example) and add the path to your routes file in the main config file (smtp2wr.conf).
-You can set the TLS certificate and key aswell as what SMTP relay to use in the main config file. 
+You can set the TLS certificate and key as well as what SMTP relay to use in the main config file. 
 
 ## Installation
 
@@ -21,28 +16,13 @@ Simply run the following to install a basic setup of RTMAIL.
 
 `curl -s https://raw.githubusercontent.com/rasmusj-se/rtmail/master/install.sh | sudo bash`
 
-Change your config in /etc/rtmail/ and start RTMAIL with `rtmail`
+Change your configs and start SMTP2WR with `smtp2wr` or use the docker image
 
 ## From source
 
-`go get -u && go build && chmod +x rtmail`
+`make build`
 
-`./rtmail -config ./config.example`
-
-## Configuring as a linux service in Ubuntu Server
-
-Put the following in `/etc/init/rtmail.conf`
-
-```
-# rtmail.conf
-start on filesystem
-console log
-exec /usr/bin/rtmail
-respawn
-respawn limit 10 90
-```
-
-Then you can use `service rtmail start` to start the RTMAIL service.
+`./smtp2wr -config ./smtp2wr.conf`
 
 ## Routes
 
@@ -51,11 +31,19 @@ You can configure your email routes in routes.conf, a route looks like this:
     {
         "Recipient":".+@example.com",
         "Type":"SMTP",
-        "Destination":"me@example.se",
+        "Relay": "mailrelay.example.com"
+        "Destination":"me@example.com",
         "LocalhostOnly": false
+        "Username":"username",
+        "Password":"password",
     }
 ```
-Where recipient is a regex string of which incoming mail will have to match to activate the route. Type is the forwarding type, may be ither HTTP or SMTP. Destination is where to send the mail, if this is blank the destination address will not be changed. If you are using HTTP routing Destination should be set to an URL of which to POST your raw email data.
+Where recipient is a regex string of which incoming mail will have to match to activate the route. 
+Type is the forwarding type, may be ither HTTP or SMTP.
+Relay is where to forward the mail (smtp server address or http endpoint URL) 
+Destination, Username and Password is applicable only for SMTP relays.
+Destination is where to send the mail, if this is blank the destination address will not be changed.
+Username and Password are SMTP relay credentials used to auth (plain text auth used by default) 
 
 To create a local forwarding server (local open relay) you can add the following to the routes.
 ```
@@ -70,18 +58,23 @@ This will match all recipients and will not change the recipient when routing. I
 
 ```
 {
-    "Cert":"/etc/rtmail/cert.crt",
-    "Key":"/etc/rtmail/cert.key",
-    "Hostname":"mail.example.com",
-    "Relay":"smtp.sendgrid.net:587",
-    "Username":"username",
-    "Password":"password",
+    "SMTPCert":"/etc/rtmail/cert.crt",
+    "SMTPKey":"/etc/rtmail/cert.key",
+    "SMTPHostname":"mail.example.com",
     "Routes":"/etc/rtmail/routes.conf",
-    "Port":"25"
+    "SMTPListen":"10025"
 }
 ```
-This is the standard configuration. Cert and Key specifies which TLS certficate and key to use on the incoming SMTP server. Relay is the SMTP server that we will send our mail to when we use SMTP routing, username and password is the auth that will be used on the relay server. Routes is the path to the routing file.
+This is the standard configuration. 
+SMTPCert and SMTPKey specifies which TLS certificate and key to use on the incoming SMTP server.
+Routes is the path to the routing file.
 
 ## Why
 
-I created this to forward mails to my private email rasmus@rasmusj.se to my gmail inbox, and I thought that I might want to add more routes in the future so I added a general feature to add more routes to the relay without having to recompile the binary. 
+It can use to forward some private mail to different mailboxes or microservices for some automation.
+I created this to process some automated emails from a service provider with my web service  
+
+## Some security considerations
+
+You have to start service with the root user if you want to bind service at default 25 port
+Don't do this if you can. Use docker image instead with a port forwarding.

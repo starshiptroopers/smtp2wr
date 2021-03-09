@@ -1,3 +1,4 @@
-*rtek.conf
+*.iml
 cert.*
-rtmail
+smtp2wr
+staging
