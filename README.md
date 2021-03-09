@@ -15,8 +15,11 @@ You can set the TLS certificate and key as well as what SMTP relay to use in the
 ## From source
 
 `git clone https://github.com/starshiptroopers/smtp2wr.git`
+
 `cd smtp2wr`
+
 `make build`
+
 `./bin/smtp2wr`
 
 ## From Docker image
