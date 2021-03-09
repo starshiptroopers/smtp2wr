@@ -12,15 +12,22 @@ import (
 	"time"
 )
 
-//start mail server with default configuration
-//start http server as http endpoint for forwarded messages
-//create smtp client, do the test smtp message and send them to the mail server
-//receive this message at http server endpoint
+type HttpRelayData struct {
+	Sender     string
+	Recipients []string
+	Data       []byte
+}
+
+//start mail server with predefined configuration
+//start http server to server http endpoint for forwarded messages
+//create smtp client and send the mail to our mail server
+//receive this message at http server endpoint and compare with original
 func TestService(t *testing.T) {
 
 	host := "127.0.0.1"
 	SMTPTo := "nobody@starshiptroopers.dev"
 	SMTPFrom := "test@test.test"
+	const operationTimeout = time.Second
 
 	SMTPPort, err := freeport.GetFreePort()
 	if err != nil {
@@ -33,15 +40,18 @@ func TestService(t *testing.T) {
 	}
 
 	config := Config{
-		SMTPHostname: "localhost",
-		SMTPListen:   fmt.Sprintf("%s:%d", host, SMTPPort),
+		SMTPHostname:       "localhost",
+		SMTPListen:         fmt.Sprintf("%s:%d", host, SMTPPort),
+		SMTPVerboseLogging: true,
 	}
-	routes := []Route{{
-		Recipient:     ".+@starshiptroopers.dev",
-		Type:          "HTTP",
-		LocalhostOnly: false,
-		Relay:         fmt.Sprintf("http://%s:%d/data", host, HTTPPort),
-	},
+	routes := []Route{
+		{
+			Recipient:     ".+@starshiptroopers.dev",
+			Type:          "HTTP",
+			LocalhostOnly: false,
+			Relay:         fmt.Sprintf("http://%s:%d/data", host, HTTPPort),
+			Timeout:       5,
+		},
 	}
 
 	launcher, err := TestingSMTPServer(config, routes)
@@ -51,10 +61,12 @@ func TestService(t *testing.T) {
 
 	err = TestingServiceStart(launcher)
 	if err != nil {
-		t.Fatalf("can't start web server: %v", err)
+		t.Fatalf("can't start smtp server: %v", err)
 	}
 
-	launcher, err = TestingWebServer(fmt.Sprintf("%s:%d", host, HTTPPort))
+	dataCh := make(chan interface{}, 1)
+
+	launcher, err = TestingWebServer(fmt.Sprintf("%s:%d", host, HTTPPort), dataCh)
 	if err != nil {
 		t.Fatalf("can't create web server: %v", err)
 	}
@@ -64,17 +76,39 @@ func TestService(t *testing.T) {
 		t.Fatalf("can't start web server: %v", err)
 	}
 
+	msg := []byte(fmt.Sprintf("To: %s\nFrom: %s\nSubject: Just a test\n\nHello\n.\n", SMTPTo, SMTPFrom))
 	err = smtp.SendMail(
-		routes[0].Relay,
+		config.SMTPListen,
 		nil,
 		SMTPFrom,
 		[]string{SMTPTo},
-		[]byte(fmt.Sprintf("To: %s\r\n"+
-			"Subject: Just a test\r\n"+
-			"\r\n"+
-			"Hello\r\n", SMTPTo)),
+		msg,
 	)
+	if err != nil {
+		t.Errorf("can't send the mail: %v", err)
+	}
 
+	//waiting for data appears on http side
+	select {
+	case d := <-dataCh:
+		if d != nil {
+			if err, ok := d.(error); ok {
+				t.Fatalf("we accept wrong data on http side: %v", err)
+			}
+
+			if data, ok := d.(*HttpRelayData); !ok {
+				t.Fatalf("we accept wrong data on http side")
+			} else {
+				if bytes.Compare(msg, data.Data) != 0 {
+					t.Fatalf("we accept wrong data on http side")
+				}
+			}
+		}
+		//wait for service startup
+	case <-time.After(operationTimeout * 1000):
+		t.Fatalf("no data received on the http server side")
+	}
+	return
 }
 
 func TestingSMTPServer(config Config, routes []Route) (launcher func() error, err error) {
@@ -86,7 +120,7 @@ func TestingSMTPServer(config Config, routes []Route) (launcher func() error, er
 	return server(config, routes)
 }
 
-func TestingWebServer(host string) (launcher func() error, err error) {
+func TestingWebServer(host string, dataChan chan interface{}) (launcher func() error, err error) {
 	var mux http.ServeMux
 
 	server := &http.Server{
@@ -95,19 +129,14 @@ func TestingWebServer(host string) (launcher func() error, err error) {
 	}
 
 	mux.HandleFunc("/data", func(res http.ResponseWriter, req *http.Request) {
-		type Data struct {
-			Sender     string
-			Recipients []string
-			Data       []byte
-		}
-
-		var d Data
+		var d HttpRelayData
 		if req.Method == http.MethodPost {
 			err := readBodyAsJSON(req, &d)
 			if err != nil {
 				http.Error(res, "wrong request data", http.StatusBadRequest)
 				return
 			}
+			dataChan <- &d
 			http.Error(res, "", http.StatusOK)
 		} else {
 			http.Error(res, "Bad request", http.StatusBadRequest)

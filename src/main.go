@@ -12,8 +12,10 @@ import (
 	"log"
 	"net/http"
 	"net/smtp"
+	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Route struct {
@@ -24,15 +26,17 @@ type Route struct {
 	Relay         string //relay addr
 	Username      string //username for auth on the default relay
 	Password      string //password for auth on the default relay
+	Timeout       int64  //endpoint connection timeout (applicable to HTTP only)
 }
 
 type Config struct {
-	Routes       string //routes config file
-	SMTPCert     string //tls cert and key
-	SMTPKey      string
-	SMTPHostname string
-	SMTPListen   string //
-	SMTPForceTLS bool
+	Routes             string //routes config file
+	SMTPCert           string //tls cert and key
+	SMTPKey            string
+	SMTPHostname       string
+	SMTPListen         string //
+	SMTPForceTLS       bool
+	SMTPVerboseLogging bool
 }
 
 var gitTag, gitCommit, gitBranch string
@@ -44,7 +48,7 @@ func main() {
 	var routes []Route
 
 	if gitTag != "" {
-		fmt.Printf("smtp2wr service version %s (%s, %s)", gitTag, gitBranch, gitCommit)
+		log.Printf("smtp2wr service version %s (%s, %s)", gitTag, gitBranch, gitCommit)
 	}
 
 	flag.StringVar(&configPath, "config", "./smtp2wr.conf", "SMTP2WR config file")
@@ -67,10 +71,13 @@ func main() {
 	if launcher, err := server(config, routes); err != nil {
 		log.Fatal(err)
 	} else {
-		launcher()
+		err := launcher()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	log.Println("Mailserver exiting peacefully.")
+	log.Println("smtp2wr exiting peacefully.")
 }
 
 func server(c Config, routes []Route) (launcher func() error, err error) {
@@ -137,7 +144,10 @@ func server(c Config, routes []Route) (launcher func() error, err error) {
 								if err != nil {
 									log.Println("Unable to parse envelope from", env.Sender)
 								} else {
-									resp, err := http.Post(route.Relay, "application/json", bytes.NewBuffer(data))
+									httpClient := http.Client{
+										Timeout: time.Second * time.Duration(route.Timeout),
+									}
+									resp, err := httpClient.Post(route.Relay, "application/json", bytes.NewBuffer(data))
 									if err == nil && resp != nil && resp.StatusCode != http.StatusOK {
 										err = errors.New("HTTP " + resp.Status)
 									}
@@ -169,9 +179,17 @@ func server(c Config, routes []Route) (launcher func() error, err error) {
 		TLSConfig: TLSConfig,
 	}
 
+	if c.SMTPVerboseLogging {
+		server.ProtocolLogger = log.New(os.Stdout, "", log.LstdFlags)
+	}
+
 	return func() error {
 		log.Println("Mailserver is listening at " + c.SMTPListen)
-		return server.ListenAndServe(c.SMTPListen)
+		err := server.ListenAndServe(c.SMTPListen)
+		if err == nil {
+			log.Println("Mailserver exiting peacefully.")
+		}
+		return err
 	}, nil
 }
 
