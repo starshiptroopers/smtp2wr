@@ -84,5 +84,6 @@ I created this to process some automated emails from a service provider with my 
 
 ## Some security considerations
 
-You have to start service with the root user if you want to bind service at default 25 port
-Don't do this if you can. Use docker image instead with a port forwarding.
+If you want to bind at default 25 port you have to start service with the root privilegies. Avoid this.
+Use docker image instead with port forwarding.
+
