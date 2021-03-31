@@ -9,3 +9,6 @@ smtp2wr:
   tty: true
   stdin_open: true
   restart: always
+
+  volumes:
+  - ./config/:/opt/smtp2wr/config/

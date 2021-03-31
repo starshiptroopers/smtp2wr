@@ -10,33 +10,56 @@ SMTP2WR is forked from RTMAIL (https://github.com/themecloud/rtmail) and complet
 Set your email routes in a routes.conf file (see example) and add the path to your routes file in the main config file (smtp2wr.conf).
 You can set the TLS certificate and key as well as what SMTP relay to use in the main config file. 
 
-## Installation
-
-Simply run the following to install a basic setup of RTMAIL.
-
-`curl -s https://raw.githubusercontent.com/rasmusj-se/rtmail/master/install.sh | sudo bash`
-
 Change your configs and start SMTP2WR with `smtp2wr` or use the docker image
 
-## From source
+## Building from source
 
-`make build`
+`git clone https://github.com/starshiptroopers/smtp2wr.git`
+
+`cd smtp2wr && make build`
+
+## Creating the docker image
+
+`make docker-image`
+
+## Running 
+
+###### from compiled binary
 
 `./smtp2wr -config ./smtp2wr.conf`
+
+###### from docker container
+
+Use docker-compose.yml file
 
 ## Routes
 
 You can configure your email routes in routes.conf, a route looks like this:
 ```
-    {
-        "Recipient":".+@example.com",
-        "Type":"SMTP",
-        "Relay": "mailrelay.example.com"
-        "Destination":"me@example.com",
-        "LocalhostOnly": false
-        "Username":"username",
-        "Password":"password",
-    }
+    [
+        {
+            "Recipient":"hello@starshiptroopers.dev",
+            "Type":"HTTP",
+            "Relay":"http://localhost:8080/mail/handler",
+            "LocalhostOnly": false,
+            "Timeout": 10
+        },
+        {
+            "Recipient":".+@starshiptroopers.dev",
+            "Relay":"some-else-mail-server.com:25",
+            "Type":"SMTP",
+            "Destination":"null@starshiptroopers.dev",
+            "LocalhostOnly": false
+        },
+        {
+            "Type":"SMTP",
+            "Relay":"some-else-mail-server.com:25",
+            "Username":"test",
+            "Password":"secure",
+            "LocalhostOnly": true
+        }
+    ]
+
 ```
 Where recipient is a regex string of which incoming mail will have to match to activate the route. 
 Type is the forwarding type, may be ither HTTP or SMTP.
@@ -47,10 +70,12 @@ Username and Password are SMTP relay credentials used to auth (plain text auth u
 
 To create a local forwarding server (local open relay) you can add the following to the routes.
 ```
+[
     {
         "Type":"SMTP",
         "LocalhostOnly": true
     }
+]
 ```
 This will match all recipients and will not change the recipient when routing. It is also only permitted from localhost to protect us from creating an open-replay that spam-bots can use.
 
@@ -58,11 +83,13 @@ This will match all recipients and will not change the recipient when routing. I
 
 ```
 {
-    "SMTPCert":"/etc/rtmail/cert.crt",
-    "SMTPKey":"/etc/rtmail/cert.key",
-    "SMTPHostname":"mail.example.com",
-    "Routes":"/etc/rtmail/routes.conf",
-    "SMTPListen":"10025"
+    "Routes":"./routes.conf",
+    "SMTPCert":"",
+    "SMTPKey":"",
+    "SMTPHostname":"localhost",
+    "SMTPListen":"127.0.0.1:10025",
+    "SMTPForceTLS":false,
+    "SMTPVerboseLogging":false
 }
 ```
 This is the standard configuration. 
@@ -71,10 +98,10 @@ Routes is the path to the routing file.
 
 ## Why
 
-It can use to forward some private mail to different mailboxes or microservices for some automation.
-I created this to process some automated emails from a service provider with my web service  
+It can use to forward some private mail to different mailboxes or http endpoints for some automation.
+I created this to process some automated emails from a service provider  
 
 ## Some security considerations
 
-You have to start service with the root user if you want to bind service at default 25 port
-Don't do this if you can. Use docker image instead with a port forwarding.
+You have to start service with the root user if you want to bind service at default smtp port (25)
+Don't do this if you can. For security purposes use docker image instead with a port forwarding.

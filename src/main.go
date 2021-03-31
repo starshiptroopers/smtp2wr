@@ -1,3 +1,10 @@
+// Copyright 2021 The Starship Troopers Authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
+//SMTP2WR enables you to receive SMTP mails and route them to other SMTP destinations or HTTPS endpoints.
+//See smtp2wr.conf and routes.conf on how to configure SMTP2WR.
+
 package main
 
 import (
@@ -17,6 +24,9 @@ import (
 	"strings"
 	"time"
 )
+
+//SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
+//See smtp2wr.conf and routes.conf on how to configure SMTP2WR.
 
 type Route struct {
 	Recipient     string //recipient regexp

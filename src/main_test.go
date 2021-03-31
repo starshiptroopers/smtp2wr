@@ -19,7 +19,7 @@ type HttpRelayData struct {
 }
 
 //start mail server with predefined configuration
-//start http server to server http endpoint for forwarded messages
+//start http server to serve http endpoint for forwarded messages
 //create smtp client and send the mail to our mail server
 //receive this message at http server endpoint and compare with original
 func TestService(t *testing.T) {
