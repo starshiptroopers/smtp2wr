@@ -3,7 +3,7 @@
 SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
 See smtp2wr.conf and routes.conf on how to configure SMTP2WR.
 
-SMTP2WR is forked from RTMAIL (https://github.com/themecloud/rtmail) and completely rewritten.
+SMTP2WR was forked from RTMAIL (https://github.com/themecloud/rtmail) and completely rewritten.
 
 ## Usage
 
