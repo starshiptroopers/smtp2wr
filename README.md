@@ -1,4 +1,4 @@
-# SMTP2WR - An smtp to http (or another smtp) relay written in Go
+# SMTP2WR - smtp to http (or another smtp) relay written in Go
 
 SMTP2WR enables you to route incoming SMTP emails to other SMTP destinations and HTTPS endpoints.
 See smtp2wr.conf and routes.conf on how to configure SMTP2WR.
